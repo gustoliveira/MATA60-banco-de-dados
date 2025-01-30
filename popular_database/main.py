@@ -6,7 +6,9 @@ from models.escala import Escala
 from models.computador import Computador
 from models.armario import Armario
 from models.registro_acesso import RegistroAcesso
+from models.registro_turno import RegistroTurno
 from models.utils import generate_id
+from models.advertencia import Advertencia
 
 fake = Faker()
 
@@ -26,7 +28,9 @@ armarios = Armario.create_armarios()
 
 start_date = datetime.datetime.today() - datetime.timedelta(days=360)
 end_date = datetime.datetime.today()
-registros = RegistroAcesso.generate_full_access_log(estudantes, computadores, armarios, start_date, end_date)
+registros = RegistroAcesso.generate_full_access_log(estudantes, computadores, armarios, start_date, end_date, supervisores)
+registros_turnos = RegistroTurno.generate_full_log(start_date, end_date, escala)
+advertencias = Advertencia.generate_multiple_adverticies(registros.values(), escala)
 
 def final(index, length):
     if index == length:
@@ -98,6 +102,25 @@ def generate_sql_inserts(estudantes, supervisores, escala, computadores, armario
     for registro in registros.values():
         index = index + 1
         sql_statements.append(f"({registro.id}, '{registro.horarioInicio}', '{registro.horarioSaida}', {registro.armarioId}, {registro.computadorId}, {registro.estudanteId}){final(index, length)}")
+
+
+    # Registros de Turno
+    sql_statements.append("INSERT INTO RegistroTurno (Id, HorarioEntrada, HorarioSaida, IdSupervisor) VALUES")
+    index = 0
+    length = len(registros_turnos.values())
+    for registro in registros_turnos.values():
+        index = index + 1
+        sql_statements.append(f"({registro.id}, '{registro.horarioEntrada}', '{registro.horarioSaida}', {registro.supervisorId}){final(index, length)}")
+
+
+    # Advertencias
+    sql_statements.append("INSERT INTO Advertencia (Id, Data, Motivo, EstudanteId, SupervisorId) VALUES")
+    index = 0
+    length = len(advertencias.values())
+    for advertencia in advertencias.values():
+        index = index + 1
+        sql_statements.append(f"({advertencia.id}, '{advertencia.date}', '{advertencia.motivo}', {advertencia.estudanteId}, {advertencia.supervisorId}){final(index, length)}")
+
 
 
     sql_statements.append('COMMIT;')

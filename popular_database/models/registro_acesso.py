@@ -1,3 +1,4 @@
+from models.advertencia import Advertencia
 from models.utils import generate_id, generate_time_manha, generate_time_tarde
 import random
 import datetime
@@ -20,7 +21,8 @@ class RegistroAcesso:
 
 
     @staticmethod
-    def generate_full_access_log(estudantes, computadores, armarios, start_date, end_date):
+    def generate_full_access_log(estudantes, computadores, armarios, start_date, end_date, escala):
+        advertencias = {}
         registros = {}
         current_date = start_date
         occupied_computers = {}
@@ -70,6 +72,16 @@ class RegistroAcesso:
                             occupied_computers[computador.id] = (horario_inicio, horario_saida)
                             if armario:
                                 occupied_armarios[armario.id] = (horario_inicio, horario_saida)
+
+                            if random.random() < 0.01:  # 1% chance do estudante tomar advertencia
+                                advertencia = Advertencia(
+                                    generate_id(),
+                                    horario_saida,
+                                    Advertencia.create_motivo(),
+                                    random.choice(list(escala.values())).id,
+                                    estudante.id
+                                )
+                                advertencias[advertencia.id] = advertencia
 
                     current_time = datetime.datetime.combine(current_date, datetime.time(12, 0) if turno == 'manha' else datetime.time(20, 0))
                     occupied_computers = {k: v for k, v in occupied_computers.items() if v[1] > current_time}
