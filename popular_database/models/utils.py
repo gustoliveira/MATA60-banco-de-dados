@@ -1,3 +1,4 @@
+import datetime as dt
 import uuid
 import random
 
@@ -18,3 +19,14 @@ def generate_phone_number():
     ddd = random.choices(ddds, weights=weights, k=1)[0]
     return f"({ddd}) 9{random.randint(1000, 9999)}-{random.randint(1000, 9999)}"
 
+
+def generate_time_manha(date=dt.date.today()):
+    return generate_time(dt.time(8, 0, 0), dt.time(12, 0, 0), date)
+
+
+def generate_time_tarde(date=dt.date.today()):
+    return generate_time(dt.time(13, 0, 0), dt.time(20, 0, 0), date)
+
+
+def generate_time(min_time, max_time, date=dt.date.today()):
+    return dt.datetime.combine(date, dt.time(random.randint(min_time.hour, max_time.hour), random.randint(min_time.minute, max_time.minute), random.randint(min_time.second, max_time.second)))

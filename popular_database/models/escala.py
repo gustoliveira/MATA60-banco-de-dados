@@ -11,6 +11,10 @@ class Escala:
         self.papel = papel
 
 
+    def __str__(self):
+        return f"{self.id}, {self.supervisorId}, \"{self.dia}\", \"{self.turno}\", \"{self.papel}\""
+
+
     @staticmethod
     def create_escala_completa(supervisores):
         escala = {}

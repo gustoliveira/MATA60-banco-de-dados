@@ -7,11 +7,10 @@ class Supervisor:
         self.estudanteId = estudanteId
         self.nome = nome
 
+
     # TODO: Implementar o método __string__ para a classe Supervisor
     def __str__(self):
-        return f"{self.id}, {self.estudanteId}"
-
-
+        return f"{self.id}, {self.estudanteId}, \"{self.nome}\""
 
 
     @staticmethod
