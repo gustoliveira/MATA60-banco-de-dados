@@ -16,15 +16,15 @@ class Escala:
 
 
     @staticmethod
-    def create_escala_completa(supervisores):
+    def create_escala_completa(supervisores, papeis):
         escala = {}
 
-        for dia in ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']:
-            for turno in ['Manhã', 'Tarde', 'Noite']:
-                for papel in ['Titular', 'Reserva', 'Suplente']:
+        for dia in ['segunda', 'terca', 'quarta', 'quinta', 'sexta']:
+            for turno in ['manha', 'tarde', 'noite']:
+                for papelId in papeis.values():
                     supervisor = choice(list(supervisores.values()))
                     id = generate_id()
-                    escala[id] = Escala(id, dia, turno, supervisor.id, papel)
+                    escala[id] = Escala(id, dia, turno, supervisor.id, papelId)
 
         return escala
 

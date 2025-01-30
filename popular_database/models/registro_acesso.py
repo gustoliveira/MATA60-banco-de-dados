@@ -12,7 +12,11 @@ class RegistroAcesso:
         self.estudanteId = estudanteId
 
     def __str__(self):
-        return f"id: {self.id}\n\tEntrada: \"{self.horarioInicio}\", Saida: \"{self.horarioSaida}\",\n\tArmarioId: {self.armarioId}, ComputadorId: {self.computadorId}, EstudanteId: {self.estudanteId}"
+        armario = self.armarioId
+        if self.armarioId == None:
+            armario = "Null"
+
+        return f"id: {self.id}\n\tEntrada: \"{self.horarioInicio}\", Saida: \"{self.horarioSaida}\",\n\tArmarioId: {armario}, ComputadorId: {self.computadorId}, EstudanteId: {self.estudanteId}"
 
 
     @staticmethod
@@ -57,7 +61,7 @@ class RegistroAcesso:
                                 generate_id(),
                                 horario_inicio,
                                 horario_saida,
-                                armario.id if armario else None,
+                                armario.id if armario else "NULL",
                                 computador.id,
                                 estudante.id
                             )

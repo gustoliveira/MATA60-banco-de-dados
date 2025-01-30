@@ -6,40 +6,104 @@ from models.escala import Escala
 from models.computador import Computador
 from models.armario import Armario
 from models.registro_acesso import RegistroAcesso
+from models.utils import generate_id
 
 fake = Faker()
 
-estudantes = Estudante.generate_n_new_estudante(fake, 100)
+estudantes = Estudante.generate_n_new_estudante(fake, 500)
 
-supervisores = Supervisor.generate_supervisores_from_estudantes(estudantes, 1)
+supervisores = Supervisor.generate_supervisores_from_estudantes(estudantes, 30)
 
-escala = Escala.create_escala_completa(supervisores)
+
+papeis = {
+    'titular': generate_id(),
+    'reserva': generate_id(),
+    'suplente': generate_id(),
+}
+escala = Escala.create_escala_completa(supervisores, papeis)
 computadores = Computador.create_computadores()
 armarios = Armario.create_armarios()
 
-print("Estudantes (id, nome, foto, matricula, curso, email, telefone)")
-index = 1
-for estudante in estudantes.values():
-    print(f"{index} - {estudante}")
-    index = 1 + index
-print("\n")
+start_date = datetime.datetime.today() - datetime.timedelta(days=360)
+end_date = datetime.datetime.today()
+registros = RegistroAcesso.generate_full_access_log(estudantes, computadores, armarios, start_date, end_date)
 
-index = 1
-print("Supervisores (id, estudanteId)")
-for supervisor in supervisores.values():
-    print(f"{index} - {supervisor}")
-    index = 1 + index
-print("\n")
+def final(index, length):
+    if index == length:
+        return ";\n\n"
+    return ","
 
-print("Escala (id, dia, turno, supervisorId, papel)")
-for e in escala.values():
-    print(e)
-print("")
+def generate_sql_inserts(estudantes, supervisores, escala, computadores, armarios, registros):
+    sql_statements = ['BEGIN;\n\n']
 
-print("Registro de horarios")
-yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
-today = datetime.datetime.today()
-registros = RegistroAcesso.generate_full_access_log(estudantes, computadores, armarios, yesterday, today)
-for registro in registros.values():
-    print(f"{registro}\n")
+    # Estudantes
+    sql_statements.append("INSERT INTO Estudante (Id, Nome, Foto, Matricula, Curso, Email, Telefone) VALUES")
+    index = 0
+    length = len(estudantes.values())
+    for estudante in estudantes.values():
+        index = index + 1
+        sql_statements.append(f"({estudante.id}, '{estudante.nome}', '{estudante.foto}', '{estudante.matricula}', '{estudante.curso}', '{estudante.email}', '{estudante.telefone}'){final(index, length)}")
 
+    # Armarios
+    sql_statements.append("INSERT INTO Armario (Id, Localizacao, Status) VALUES")
+    index = 0
+    length = len(armarios.values())
+    for armario in armarios.values():
+        index = index + 1
+        sql_statements.append(f"({armario.id}, '{armario.localizacao}', '{armario.status}'){final(index, length)}")
+
+    # Computadores
+    sql_statements.append("INSERT INTO Computador (Id, Modelo, Localizacao, Status, MotivoIndisponibilidade, Tipo) VALUES")
+    index = 0
+    length = len(computadores.values())
+    for computador in computadores.values():
+        index = index + 1
+        sql_statements.append(f"({computador.id}, '{computador.modelo}', '{computador.localizacao}', '{computador.status}', '{computador.motivoIndisponibilidade}', '{computador.tipo}'){final(index, length)}")
+
+    # Papel
+    sql_statements.append("INSERT INTO Papel (Id, Descricao) VALUES")
+    sql_statements.append(f"({papeis['titular']}, 'titular'),")
+    sql_statements.append(f"({papeis['reserva']}, 'reserva'),")
+    sql_statements.append(f"({papeis['suplente']}, 'suplente');\n\n")
+
+    # Supervisores
+    sql_statements.append("INSERT INTO Supervisor (Id, IdEstudante) VALUES")
+    index = 0
+    length = len(supervisores.values())
+    for supervisor in supervisores.values():
+        index = index + 1
+        sql_statements.append(f"({supervisor.id}, {supervisor.estudanteId}){final(index, length)}")
+
+    # Escala
+    sql_statements.append("INSERT INTO Escala (Id, HorarioInicio, HorarioSaida, Dia, IdPapel, IdSupervisor) VALUES")
+    index = 0
+    length = len(escala.values())
+    for e in escala.values():
+        index = index + 1
+        inicio = datetime.datetime.now().replace(hour=8, minute=0, second=0, microsecond=0)
+        fim = datetime.datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
+        if e.turno == 'tarde':
+            inicio = datetime.datetime.now().replace(hour=13, minute=0, second=0, microsecond=0)
+            fim = datetime.datetime.now().replace(hour=17, minute=0, second=0, microsecond=0)
+        if e.turno == 'noite':
+            inicio = datetime.datetime.now().replace(hour=17, minute=0, second=0, microsecond=0)
+            fim = datetime.datetime.now().replace(hour=20, minute=0, second=0, microsecond=0)
+
+        sql_statements.append(f"({e.id}, '{inicio}', '{fim}', '{e.dia}', {e.papel}, {e.supervisorId}){final(index, length)}")
+
+    # Registros de Acesso
+    sql_statements.append("INSERT INTO RegistroAcesso (Id, HorarioInicio, HorarioSaida, IdArmario, IdComputador, IdEstudante) VALUES")
+    index = 0
+    length = len(registros.values())
+    for registro in registros.values():
+        index = index + 1
+        sql_statements.append(f"({registro.id}, '{registro.horarioInicio}', '{registro.horarioSaida}', {registro.armarioId}, {registro.computadorId}, {registro.estudanteId}){final(index, length)}")
+
+
+    sql_statements.append('COMMIT;')
+    return "\n".join(sql_statements)
+
+
+sql_inserts = generate_sql_inserts(estudantes, supervisores, escala, computadores, armarios, registros)
+
+print(sql_inserts)
